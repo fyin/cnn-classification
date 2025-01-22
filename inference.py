@@ -1,0 +1,56 @@
+import torch
+from PIL import Image
+from torchvision.transforms import transforms
+
+from config import get_latest_model_checkpoint, get_config
+from model import LeNet
+
+"""
+Perform inference on an input image using the trained model. 
+Returns the predicted class and probability output.
+"""
+def inference(image_input_tensor, device):
+    device = torch.device(device)
+    model = LeNet().to(device)
+    # Load the checkpoint
+    latest_model_checkpoint = get_latest_model_checkpoint(get_config())
+    checkpoint = torch.load(latest_model_checkpoint, map_location=device, weights_only=True)
+    # Load the model state_dict
+    model.load_state_dict(checkpoint["model_state_dict"])
+
+    # Set model to evaluation mode
+    model.eval()
+
+    # Perform inference
+    with torch.no_grad():  # No gradients needed during inference
+        output = model(image_input_tensor)
+        softmax = torch.nn.Softmax(dim=1)
+        probability_output = softmax(output)
+        predicted_class = torch.argmax(output, dim=1).item()
+
+    return probability_output, predicted_class
+
+"""
+Before inference, load an image (png or jpg) from the provided path, and transform it to input tensor by resizing it to the trained model input size (28, 28), 
+converting it to grayscale, and normalizing it.
+"""
+def preprocess_image(image_path, device):
+    transform = transforms.Compose([
+        transforms.Grayscale(num_output_channels=1),
+        transforms.Resize((28, 28)),  # Resize to MNIST size
+        transforms.ToTensor(),
+        transforms.Normalize((0.5,), (0.5,))
+    ])
+
+    image = Image.open(image_path)
+    input_tensor = transform(image).unsqueeze(0).to(device)  # Add batch dimension
+    return input_tensor
+
+
+if __name__ == "__main__":
+    device = "cuda" if torch.cuda.is_available() else "mps" if torch.backends.mps.is_built() or torch.backends.mps.is_available() else "cpu"
+    image_path = "data/4.png"
+    image_input_tensor = preprocess_image(image_path, device)
+    output, predicted_class = inference(image_input_tensor, device)
+    print(f"probability_output: {output}")
+    print(f"Predicted class: {predicted_class}")

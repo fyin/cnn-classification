@@ -1,0 +1,14 @@
+# Neural Network Model Dependencies
+pytorch
+torchmetrics
+torchvision
+
+# Core Python Libraries
+numpy
+
+# Visualization Tools
+tensorboard
+matplotlib
+
+# Utility Tools
+tqdm
