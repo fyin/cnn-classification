@@ -4,6 +4,7 @@ from torchvision.transforms import transforms
 
 from config import get_latest_model_checkpoint, get_config
 from model import LeNet
+from train import get_device
 
 """
 Perform inference on an input image using the trained model. 
@@ -48,7 +49,7 @@ def preprocess_image(image_path, device):
 
 
 if __name__ == "__main__":
-    device = "cuda" if torch.cuda.is_available() else "mps" if torch.backends.mps.is_built() or torch.backends.mps.is_available() else "cpu"
+    device = get_device()
     image_path = "data/4.png"
     image_input_tensor = preprocess_image(image_path, device)
     output, predicted_class = inference(image_input_tensor, device)

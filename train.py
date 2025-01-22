@@ -10,21 +10,7 @@ from tqdm import tqdm
 
 
 def train_model(config):
-    device = "cuda" if torch.cuda.is_available() else "mps" if torch.backends.mps.is_built() or torch.backends.mps.is_available() else "cpu"
-    print("Using device:", device)
-    if (device == "cuda"):
-        print(f"Device name: {torch.cuda.get_device_name(device.index)}")
-        print(f"Device memory: {torch.cuda.get_device_properties(device.index).total_memory / 1024 ** 3} GB")
-    elif (device == 'mps'):
-        print(f"Device name: <mps>")
-    else:
-        print("NOTE: If you have a GPU, consider using it for training. Go to https://pytorch.org/get-started/locally/ for instructions.")
-        print(
-            "      On a Windows machine, Ex, run: conda install pytorch torchvision torchaudio pytorch-cuda=11.8 -c pytorch -c nvidia")
-        print(
-            "      On a Mac machine, Ex, run: conda install pytorch::pytorch torchvision torchaudio -c pytorch")
-
-    device = torch.device(device)
+    device = get_device()
     model = LeNet().to(device)
     model.apply(init_weights)
     loss_fun = nn.CrossEntropyLoss()
@@ -38,7 +24,7 @@ def train_model(config):
     latest_model_checkpoint = get_latest_model_checkpoint(config)
     if latest_model_checkpoint:
         print(f"Preloading model from {latest_model_checkpoint}")
-        state = torch.load(latest_model_checkpoint)
+        state = torch.load(latest_model_checkpoint, map_location=device, weights_only=True)
         model.load_state_dict(state['model_state_dict'])
         initial_epoch = state['epoch'] + 1
         optimizer.load_state_dict(state['optimizer_state_dict'])
@@ -119,6 +105,25 @@ def init_weights(m):
         nn.init.kaiming_normal_(m.weight, mode='fan_out', nonlinearity='relu')
         if m.bias is not None:
             nn.init.zeros_(m.bias)
+
+def get_device():
+    device = "cuda" if torch.cuda.is_available() else "mps" if torch.backends.mps.is_built() or torch.backends.mps.is_available() else "cpu"
+    print("Using device:", device)
+    if (device == "cuda"):
+        print(f"Device name: {torch.cuda.get_device_name(device.index)}")
+        print(f"Device memory: {torch.cuda.get_device_properties(device.index).total_memory / 1024 ** 3} GB")
+    elif (device == 'mps'):
+        print(f"Device name: <mps>")
+    else:
+        print(
+            "NOTE: If you have a GPU, consider using it for training. Go to https://pytorch.org/get-started/locally/ for instructions.")
+        print(
+            "      On a Windows machine, Ex, run: conda install pytorch torchvision torchaudio pytorch-cuda=11.8 -c pytorch -c nvidia")
+        print(
+            "      On a Mac machine, Ex, run: conda install pytorch::pytorch torchvision torchaudio -c pytorch")
+
+    device = torch.device(device)
+    return device
 
 if __name__ == '__main__':
     config = get_config()
