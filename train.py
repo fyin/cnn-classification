@@ -1,9 +1,12 @@
+from pathlib import Path
+
 import torch
 import torch.nn as nn
 import torch.optim as optim
 from torch.utils.tensorboard import SummaryWriter
 
-from config import get_latest_model_checkpoint, get_tb_writer_path, get_model_checkpoint_basepath, get_config
+from config import get_latest_model_checkpoint, get_tb_writer_path, get_model_basename, get_config, \
+    get_model_checkpoint_dir
 from dataset import get_dataloader
 from model import LeNet
 from tqdm import tqdm
@@ -21,6 +24,7 @@ def train_model(config):
     writer = SummaryWriter(get_tb_writer_path(config))
     global_step = 0
     initial_epoch = 0
+    Path(get_model_checkpoint_dir(config)).mkdir(parents=True, exist_ok=True)
     latest_model_checkpoint = get_latest_model_checkpoint(config)
     if latest_model_checkpoint:
         print(f"Preloading model from {latest_model_checkpoint}")
@@ -68,8 +72,8 @@ def train_model(config):
         writer.flush()
 
         # Save model checkpoint for later reference and retraining
-        model_checkpoint_basepath = get_model_checkpoint_basepath(config)
-        model_checkpoint_filename = f"{model_checkpoint_basepath}{epoch}.pt"
+        model_basename = get_model_basename(config)
+        model_checkpoint_filename = f"{model_basename}{epoch}.pt"
         torch.save({
             'epoch': epoch,
             'model_state_dict': model.state_dict(),
