@@ -24,7 +24,7 @@ class LeNet(nn.Module):
         # Since CrossEntropyLoss (which already contains softmax) is used for loss,
         # no need to apply softmax on output during training.
         # https://pytorch.org/docs/stable/generated/torch.nn.CrossEntropyLoss.html
-        # Add softmax to the output for probabilities during inference
+        # Add softmax to the output for probabilities during inference if needed
         x = self.fc3(x)
         return x
 

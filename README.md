@@ -16,17 +16,20 @@ All the required dependencies are put in requirements.txt.
 
 ## Training
   * Run script directly, `python train.py` 
-  * All training and evaluation processes are logged to Tensorboard. Each model epoch checkpoint is saved for later inference.  
-  * It was trained on mps device. After 10 epochs, the model accuracy is about 99%.
-
-## Visualization
-* Use Tensorboard to visualize the weights, weight gradients, loss and accuracy during training process.
-  * Run `tensorboard --logdir runs/model_tb_logs`
-  * Open `http://localhost:6006` in your browser
+  * All training and evaluation processes are logged to Tensorboard. Each model epoch checkpoint is saved for later deployment and inference.
+      * To visualize the weights, weight gradients, loss and accuracy during training process in Tensorboard,
+        * Run `tensorboard --logdir runs/tensorboard_logs` to start Tensorboard.
+        * Open `http://localhost:6006` in your browser to view the Tensorboard logs.
+  * It was trained on mps device for 10 epochs. According to Tensorboard logs, after 5 epochs, 
+    * model accuracy reaches ~99%, 
+    * train loss keeps decreasing but eval loss starts to increase. To prevent from overfitting, early stopping is used. Checkpoint at epoch 5 is used for inference.
+  * Also tried to train the model using SGD optimizer to compare with Adam optimizer performance. As expected, Adam optimizer performs better, it trains faster to get the same accuracy. 
 
 ## Inference
 * Run script directly, `python inference.py`
-* Use the latest model checkpoint for inference, which predicts the class of the input image you provide.
+* Use the latest model checkpoint for inference, which predicts the class of the input image you provide.  
+
+**Note**: Here just for a quick local prediction. For a real time inference, you need to deploy the model to a server.
 
 ## References
 * https://www.youtube.com/watch?v=jDe5BAsT2-Y

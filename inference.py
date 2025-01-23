@@ -2,7 +2,7 @@ import torch
 from PIL import Image
 from torchvision.transforms import transforms
 
-from config import get_latest_model_checkpoint, get_config
+from config import get_config, get_model_checkpoint
 from model import LeNet
 from train import get_device
 
@@ -14,8 +14,8 @@ def inference(image_input_tensor, device):
     device = torch.device(device)
     model = LeNet().to(device)
     # Load the checkpoint
-    latest_model_checkpoint = get_latest_model_checkpoint(get_config())
-    checkpoint = torch.load(latest_model_checkpoint, map_location=device, weights_only=True)
+    model_checkpoint = get_model_checkpoint(get_config(), 4)
+    checkpoint = torch.load(model_checkpoint, map_location=device, weights_only=True)
     # Load the model state_dict
     model.load_state_dict(checkpoint["model_state_dict"])
 
