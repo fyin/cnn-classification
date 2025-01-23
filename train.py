@@ -5,8 +5,7 @@ import torch.nn as nn
 import torch.optim as optim
 from torch.utils.tensorboard import SummaryWriter
 
-from config import get_latest_model_checkpoint, get_tb_writer_path, get_model_basename, get_config, \
-    get_model_checkpoint_dir
+from config import get_latest_model_checkpoint, get_tb_writer_path, get_model_basename, get_config, get_model_checkpoint_dir
 from dataset import get_dataloader
 from model import LeNet
 from tqdm import tqdm
@@ -18,6 +17,8 @@ def train_model(config):
     model.apply(init_weights)
     loss_fun = nn.CrossEntropyLoss()
 
+    # Initialize optimizer
+    # optimizer = optim.SGD(model.parameters(), lr=config['learning_rate'], momentum=0.9)
     optimizer = optim.Adam(model.parameters(), lr=config['learning_rate'])
 
     # Initialize Tensorboard writer

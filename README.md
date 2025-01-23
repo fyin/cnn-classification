@@ -23,6 +23,7 @@ All the required dependencies are put in requirements.txt.
   * It was trained on mps device for 10 epochs. According to Tensorboard logs, after 5 epochs, 
     * model accuracy reaches ~99%, 
     * train loss keeps decreasing but eval loss starts to increase. To prevent from overfitting, early stopping is used. Checkpoint at epoch 5 is used for inference.
+  * Also tried to train the model using SGD optimizer to compare with Adam optimizer performance. As expected, Adam optimizer performs better, it trains faster to get the same accuracy. 
 
 ## Inference
 * Run script directly, `python inference.py`
