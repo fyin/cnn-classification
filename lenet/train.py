@@ -1,3 +1,4 @@
+import os
 from pathlib import Path
 
 import torch
@@ -5,10 +6,13 @@ import torch.nn as nn
 import torch.optim as optim
 from torch.utils.tensorboard import SummaryWriter
 
-from config import get_latest_model_checkpoint, get_tb_writer_path, get_model_basename, get_config, get_model_checkpoint_dir
-from dataset import get_dataloader
-from model import LeNet
+from lenet.config import get_config
+from lenet.dataset import get_dataloader
+from lenet.model import LeNet
 from tqdm import tqdm
+
+from lenet.utils import get_device, get_tb_writer_path, get_model_checkpoint_dir, get_latest_model_checkpoint, \
+    get_model_basename
 
 
 def train_model(config):
@@ -105,30 +109,11 @@ def evaluate_model(model, device, loss_func, test_loader):
     print(f'\nAccuracy:  {accuracy}%')
     return accuracy, eval_loss/len(test_loader)
 
-def init_weights(m):
+def init_weights(m) -> None:
     if isinstance(m, nn.Conv2d) or isinstance(m, nn.Linear):
         nn.init.kaiming_normal_(m.weight, mode='fan_out', nonlinearity='relu')
         if m.bias is not None:
             nn.init.zeros_(m.bias)
-
-def get_device():
-    device = "cuda" if torch.cuda.is_available() else "mps" if torch.backends.mps.is_built() or torch.backends.mps.is_available() else "cpu"
-    print("Using device:", device)
-    if (device == "cuda"):
-        print(f"Device name: {torch.cuda.get_device_name(device.index)}")
-        print(f"Device memory: {torch.cuda.get_device_properties(device.index).total_memory / 1024 ** 3} GB")
-    elif (device == 'mps'):
-        print(f"Device name: <mps>")
-    else:
-        print(
-            "NOTE: If you have a GPU, consider using it for training. Go to https://pytorch.org/get-started/locally/ for instructions.")
-        print(
-            "      On a Windows machine, Ex, run: conda install pytorch torchvision torchaudio pytorch-cuda=11.8 -c pytorch -c nvidia")
-        print(
-            "      On a Mac machine, Ex, run: conda install pytorch::pytorch torchvision torchaudio -c pytorch")
-
-    device = torch.device(device)
-    return device
 
 if __name__ == '__main__':
     config = get_config()

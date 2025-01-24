@@ -4,7 +4,9 @@ import torchvision.transforms as transforms
 import matplotlib.pyplot as plt
 import numpy as np
 
-from config import get_config
+from lenet.config import get_config
+from lenet.utils import get_dataset_download_dir
+
 
 def get_dataloader(config, is_train):
     # (0.5,), one is for Mean normalization values, the other is for Standard deviation values for each channel.
@@ -15,7 +17,8 @@ def get_dataloader(config, is_train):
 
     # https://pytorch.org/vision/main/generated/torchvision.datasets.MNIST.html
     # https: // www.kaggle.com / datasets / hojjatk / mnist - dataset
-    dataset = torchvision.datasets.MNIST(root='./data', train=is_train,
+    download_path = get_dataset_download_dir(config)
+    dataset = torchvision.datasets.MNIST(root=download_path, train=is_train,
                                            download=True, transform=transform)
     dataloader = torch.utils.data.DataLoader(dataset, batch_size=config['batch_size'],
                                           shuffle=True, num_workers=config['num_dataloader_workers'])
