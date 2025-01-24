@@ -1,10 +1,12 @@
+from pathlib import Path
+
 import torch
 from PIL import Image
 from torchvision.transforms import transforms
 
-from config import get_config, get_model_checkpoint
-from model import LeNet
-from train import get_device
+from lenet.config import get_config
+from lenet.model import LeNet
+from lenet.utils import get_model_checkpoint, get_device, get_project_root_dir
 
 """
 Perform inference on an input image using the trained model. 
@@ -50,7 +52,7 @@ def preprocess_image(image_path, device):
 
 if __name__ == "__main__":
     device = get_device()
-    image_path = "data/4.png"
+    image_path = Path(get_project_root_dir()).joinpath("data/4.png")
     image_input_tensor = preprocess_image(image_path, device)
     output, predicted_class = inference(image_input_tensor, device)
     print(f"probability_output: {output}")
