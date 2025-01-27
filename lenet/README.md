@@ -22,15 +22,15 @@ All the required dependencies are put in requirements.txt.
 ## Training
 * Run script directly, `python3 -m lenet.ray_tune` or just run ray_tune.py script in your IDE.
 * Hyperparameter tuning results,
-        
+
 |Trial name | status | learning_rate | batch_size | optimizer | iter | total time (s) | train_loss | eval_loss | accuracy | 
-        |----------|--------|---------------|-----------|-----------|-----|----------------|-----------|----------|----------|
-        | train_model_e5590_00000 | TERMINATED | 0.000433557 | 16 | Adam | 8 | 480.026 | 0.0355927 | 0.0466648 | 98.5 |
-        | train_model_e5590_00001 | TERMINATED | 0.000118775 | 32 | Adam | 1 | 42.4072 | 0.862882 | 0.315937 | 90.16 |
-        | train_model_e5590_00002 | TERMINATED | 0.0013643 | 64 | Adam | 8 | 386.701 | 0.0456127 | 0.0453391 | 98.62 | 
-        | train_model_e5590_00003 | TERMINATED | 0.000751662 | 16 | SGD | 4 | 421.861 | 0.0361178 | 0.0519034 | 98.58 | 
-        | train_model_e5590_00004 | TERMINATED | 0.0027749 | 32 | SGD | 8 | 406.966 | 0.0310195 | 0.0533711 | 98.65 | 
-        | train_model_e5590_00005 | TERMINATED | 0.000181391 | 64 | SGD | 1 | 29.0651 | 0.531067 | 0.165373 | 94.83 |
+|----------|--------|---------------|-----------|-----------|-----|----------------|-----------|----------|----------|
+| train_model_e5590_00000 | TERMINATED | 0.000433557 | 16 | Adam | 8 | 480.026 | 0.0355927 | 0.0466648 | 98.5 |
+| train_model_e5590_00001 | TERMINATED | 0.000118775 | 32 | Adam | 1 | 42.4072 | 0.862882 | 0.315937 | 90.16 |
+| train_model_e5590_00002 | TERMINATED | 0.0013643 | 64 | Adam | 8 | 386.701 | 0.0456127 | 0.0453391 | 98.62 | 
+| train_model_e5590_00003 | TERMINATED | 0.000751662 | 16 | SGD | 4 | 421.861 | 0.0361178 | 0.0519034 | 98.58 | 
+| train_model_e5590_00004 | TERMINATED | 0.0027749 | 32 | SGD | 8 | 406.966 | 0.0310195 | 0.0533711 | 98.65 | 
+| train_model_e5590_00005 | TERMINATED | 0.000181391 | 64 | SGD | 1 | 29.0651 | 0.531067 | 0.165373 | 94.83 |
 
 * From the tuning results, the best model is `train_model_e5590_00002` considering the lowest evaluation loss and highest accuracy and lower time cost. 
 But train_model_e5590_00000 and train_model_e5590_00004  are also good models.
