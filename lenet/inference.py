@@ -4,9 +4,8 @@ import torch
 from PIL import Image
 from torchvision.transforms import transforms
 
-from lenet.config import get_config
 from lenet.model import LeNet
-from lenet.utils import get_model_checkpoint, get_device, get_project_root_dir
+from lenet.utils import get_device, get_project_root_dir
 
 """
 Perform inference on an input image using the trained model. 
@@ -16,10 +15,10 @@ def inference(image_input_tensor, device):
     device = torch.device(device)
     model = LeNet().to(device)
     # Load the checkpoint
-    model_checkpoint = get_model_checkpoint(get_config(), 4)
+    model_checkpoint = get_model_checkpoint()
     checkpoint = torch.load(model_checkpoint, map_location=device, weights_only=True)
     # Load the model state_dict
-    model.load_state_dict(checkpoint["model_state_dict"])
+    model.load_state_dict(checkpoint["model_state"])
 
     # Set model to evaluation mode
     model.eval()
@@ -48,6 +47,9 @@ def preprocess_image(image_path, device):
     image = Image.open(image_path)
     input_tensor = transform(image).unsqueeze(0).to(device)  # Add batch dimension
     return input_tensor
+
+def get_model_checkpoint():
+    return Path(get_project_root_dir()).joinpath("test-results/checkpoint_7.pt")
 
 
 if __name__ == "__main__":

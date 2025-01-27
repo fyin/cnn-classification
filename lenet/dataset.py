@@ -1,14 +1,18 @@
+import os
+from pathlib import Path
+
 import torch
 import torchvision
 import torchvision.transforms as transforms
 import matplotlib.pyplot as plt
 import numpy as np
+from filelock import FileLock
 
-from lenet.config import get_config
-from lenet.utils import get_dataset_download_dir
+from lenet.utils import get_dataset_download_dir, get_project_root_dir
 
 
-def get_dataloader(config, is_train):
+def get_dataloader(batch_size, download_path, is_train):
+    print(f"download_path:{download_path}")
     # (0.5,), one is for Mean normalization values, the other is for Standard deviation values for each channel.
     # Normalize pixel to [-1, 1]
     transform = transforms.Compose(
@@ -17,11 +21,12 @@ def get_dataloader(config, is_train):
 
     # https://pytorch.org/vision/main/generated/torchvision.datasets.MNIST.html
     # https: // www.kaggle.com / datasets / hojjatk / mnist - dataset
-    download_path = get_dataset_download_dir(config)
-    dataset = torchvision.datasets.MNIST(root=download_path, train=is_train,
-                                           download=True, transform=transform)
-    dataloader = torch.utils.data.DataLoader(dataset, batch_size=config['batch_size'],
-                                          shuffle=True, num_workers=config['num_dataloader_workers'])
+    with FileLock(os.path.expanduser("~/.data.lock")):
+        Path(download_path).mkdir(parents=True, exist_ok=True)
+        dataset = torchvision.datasets.MNIST(root=download_path, train=is_train,
+                                               download=True, transform=transform)
+        dataloader = torch.utils.data.DataLoader(dataset, batch_size=batch_size,
+                                              shuffle=True, num_workers=4)
     return dataloader
 
 def image_class_list():
@@ -39,11 +44,12 @@ def imshow(img):
 
 
 if __name__ == '__main__':
-    config = get_config()
-    train_loader = get_dataloader(config, is_train=True)
+    download_path = Path(get_project_root_dir()).joinpath(get_dataset_download_dir())
+    batch_size = 4
+    train_loader = get_dataloader(batch_size, download_path, is_train=True)
     classes = image_class_list()
     dataiter = iter(train_loader)
     images, labels = next(dataiter)
     # show images
     imshow(torchvision.utils.make_grid(images))
-    print(' '.join('%5s' % classes[labels[j]] for j in range(config['batch_size'])))
+    print(' '.join('%5s' % classes[labels[j]] for j in range(batch_size)))
