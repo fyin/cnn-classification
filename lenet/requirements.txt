@@ -9,6 +9,8 @@ numpy
 # Visualization Tools
 tensorboard
 matplotlib
+mlflow
 
 # Utility Tools
 tqdm
+pyyaml

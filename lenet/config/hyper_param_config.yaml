@@ -1,0 +1,12 @@
+lr:
+  type: loguniform
+  low: 1e-4
+  high: 1e-2
+batch_size:
+  type: grid_search
+  values: [16, 32, 64]
+optimizer:
+  type: grid_search
+  values: ["Adam", "SGD"]
+epochs:
+  value: 8

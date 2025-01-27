@@ -1,0 +1,9 @@
+model:
+  name: lenet
+  checkpoint_dir: runs/checkpoints
+
+train:
+  tensorboard_dir: runs/tensorboard
+
+data:
+  download_dir: ./datasets

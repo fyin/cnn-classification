@@ -1,93 +1,90 @@
+import multiprocessing
 import os
+import tempfile
 from pathlib import Path
 
 import torch
 import torch.nn as nn
 import torch.optim as optim
-from torch.utils.tensorboard import SummaryWriter
-
-from lenet.config import get_config
+from ray import train
 from lenet.dataset import get_dataloader
 from lenet.model import LeNet
 from tqdm import tqdm
 
-from lenet.utils import get_device, get_tb_writer_path, get_model_checkpoint_dir, get_latest_model_checkpoint, \
-    get_model_basename
+from lenet.utils import get_device, get_dataset_download_dir
 
 
 def train_model(config):
-    device = get_device()
-    model = LeNet().to(device)
-    model.apply(init_weights)
-    loss_fun = nn.CrossEntropyLoss()
+    try:
+        device = get_device()
+        model = LeNet().to(device)
+        model.apply(init_weights)
+        loss_fun = nn.CrossEntropyLoss()
 
-    # Initialize optimizer
-    # optimizer = optim.SGD(model.parameters(), lr=config['learning_rate'], momentum=0.9)
-    optimizer = optim.Adam(model.parameters(), lr=config['learning_rate'])
+        print("config", config)
 
-    # Initialize Tensorboard writer
-    writer = SummaryWriter(get_tb_writer_path(config))
-    global_step = 0
-    initial_epoch = 0
-    Path(get_model_checkpoint_dir(config)).mkdir(parents=True, exist_ok=True)
-    latest_model_checkpoint = get_latest_model_checkpoint(config)
-    if latest_model_checkpoint:
-        print(f"Preloading model from {latest_model_checkpoint}")
-        state = torch.load(latest_model_checkpoint, map_location=device, weights_only=True)
-        model.load_state_dict(state['model_state_dict'])
-        initial_epoch = state['epoch'] + 1
-        optimizer.load_state_dict(state['optimizer_state_dict'])
-        global_step = state['global_step']
-    else:
-        print("No model to preload, starting from scratch")
+        storage_path = Path(config['project_root']).joinpath("test-results")
+        print("storage_path", storage_path)
 
-    for epoch in tqdm(range(initial_epoch, config['num_epochs'])):
+        # Initialize optimizer
+        if config['optimizer'] == "Adam":
+            optimizer = optim.SGD(model.parameters(), lr=config['learning_rate'], momentum=0.9)
+        elif config['optimizer'] == "SGD":
+             optimizer = optim.Adam(model.parameters(), lr=config['learning_rate'])
+        else:
+            raise ValueError(f"Optimizer {config['optimizer']} is not supported")
 
-        train_loss = 0.0
-        train_dataloader = get_dataloader(config, is_train=True)
-        for i, data in enumerate(train_dataloader, 0):
-            # get the inputs
-            inputs, labels = data
-            #  .to(device) is not in-place operation. It returns a new tensor,
-            #  does not modify the original tensor and moves it to the specified device.
-            inputs = inputs.to(device)
-            labels = labels.to(device)
+        initial_epoch = 0
+        checkpoint = train.get_checkpoint()
+        if checkpoint:
+            with checkpoint.as_directory() as checkpoint_dir:
+                checkpoint_dict = torch.load(os.path.join(checkpoint_dir, "checkpoint.pt"))
+                initial_epoch = checkpoint_dict["epoch"] + 1
+                model.load_state_dict(checkpoint_dict["model_state"])
+                optimizer.load_state_dict(checkpoint_dict["optimizer_state_dict"])
+        else:
+            print("No model to preload, starting from scratch")
 
-            # zero the parameter gradients to prevent accumulation
-            optimizer.zero_grad()
+        download_path = Path(config['project_root']).joinpath(get_dataset_download_dir())
 
-            outputs = model(inputs)
-            loss = loss_fun(outputs, labels)
-            loss.backward()
-            optimizer.step()
+        for epoch in tqdm(range(initial_epoch, config['epochs'])):
 
-            train_loss += loss.item()
-            global_step += 1
+            train_loss = 0.0
+            train_dataloader = get_dataloader(batch_size=config['batch_size'], download_path=download_path, is_train=True)
+            for i, data in enumerate(train_dataloader, 0):
+                # get the inputs
+                inputs, labels = data
+                #  .to(device) is not in-place operation. It returns a new tensor,
+                #  does not modify the original tensor and moves it to the specified device.
+                inputs = inputs.to(device)
+                labels = labels.to(device)
 
-        # Log model weights and gradients
-        for name, param in model.named_parameters():
-            writer.add_histogram(f'Weights/{name}', param, global_step)
-            writer.add_histogram(f'Gradients/{name}', param.grad, global_step)
+                # zero the parameter gradients to prevent accumulation
+                optimizer.zero_grad()
 
-        accuracy, eval_loss = evaluate_model(model, device, loss_fun, get_dataloader(config, is_train=False))
-        train_loss /= len(train_dataloader)
-        # Log accuracy and losses
-        writer.add_scalar('Eval Accuracy', accuracy, global_step)
-        writer.add_scalars('Loss', {'Train': train_loss, 'Eval': eval_loss}, global_step)
-        writer.flush()
+                outputs = model(inputs)
+                loss = loss_fun(outputs, labels)
+                loss.backward()
+                optimizer.step()
 
-        # Save model checkpoint for later reference and retraining
-        model_basename = get_model_basename(config)
-        model_checkpoint_filename = f"{model_basename}{epoch}.pt"
-        torch.save({
-            'epoch': epoch,
-            'model_state_dict': model.state_dict(),
-            'optimizer_state_dict': optimizer.state_dict(),
-            'loss': train_loss,
-            'global_step': global_step
-        }, model_checkpoint_filename)
+                train_loss += loss.item()
 
-    writer.close()
+            accuracy, eval_loss = evaluate_model(model, device, loss_fun, get_dataloader(config['batch_size'], download_path=download_path, is_train=False))
+            train_loss /= len(train_dataloader)
+
+            torch.save({
+                "epoch": epoch,
+                "model_state": model.state_dict(),
+                "optimizer_state_dict": optimizer.state_dict()
+            },
+                os.path.join(storage_path, f"checkpoint_{epoch}.pt"),
+            )
+            metrics = {"train_loss": train_loss, "eval_loss": eval_loss, "accuracy": accuracy}
+            train.report(metrics)
+    finally:
+        torch.cuda.empty_cache()  # Clean up GPU memory if applicable
+        torch.mps.empty_cache()
+        multiprocessing.active_children()  # Ensures child processes are cleaned up
 
 def evaluate_model(model, device, loss_func, test_loader):
     correct_predictions = 0
@@ -114,7 +111,3 @@ def init_weights(m) -> None:
         nn.init.kaiming_normal_(m.weight, mode='fan_out', nonlinearity='relu')
         if m.bias is not None:
             nn.init.zeros_(m.bias)
-
-if __name__ == '__main__':
-    config = get_config()
-    train_model(config)
